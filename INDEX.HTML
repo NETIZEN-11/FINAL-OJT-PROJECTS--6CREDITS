@@ -22,7 +22,24 @@
             <button class="level" data-level="hard">Hard</button>
         </div>
      </div>
+     <!-- Game Screen -->
+      <div class="game-screen hidden" id="gameScreen">
 
+        <div class="info">
+            <p>Score: <span id="score">0</span></p>
+            <p>Time: <spam id="time">0</spam> sec</p>
+            <p>Matches: <span id="Matches">0</span></p>
+        </div>
+
+        <div id="board" class="board"></div>
+
+        <div class="controls">
+            <button id="pauseBtn">Pause</button>
+            <button id="restartBtn">Restart</button>
+            <button id="backBtn">Back</button>
+      </div>
+
+      <div id="message" class="message hidden"></div>
     </div>
 </body>
 </html>
