@@ -106,3 +106,13 @@ button:hover {background: #0096c7;}
   transform: rotateY(180deg);
 }
 
+/* Message */
+.message {
+  margin-top: 10px;
+  background: #d4edda;
+  color: #155724;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+
