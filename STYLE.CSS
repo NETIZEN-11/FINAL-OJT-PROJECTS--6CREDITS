@@ -56,3 +56,16 @@ button:hover {background: #0096c7;}
   gap: 10px;
   justify-content: center;
 }
+
+/* AUTO-PESIZING CARDS */
+.card {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 80px; /* easy level size*/
+  perspective: 100px;
+  cursor: pointer;
+}
+
+#board.easy .card { max-width: 90px; } /*bigger cards */
+#board.medium .card { max-width: 70px;}
+#board.hard .card { max-width: 58px;}
