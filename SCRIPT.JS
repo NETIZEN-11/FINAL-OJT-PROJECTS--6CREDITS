@@ -1,297 +1,281 @@
 "use strict";
-// THIS IS JS OF POWER FULL MODE - CLEAN CODE ,DIBUG FREE,REMOVE LET CONST VAT ERROR
 
-// SOUND
-const flipSound = document.getElementById("s_flip");
-const matchSound = document.getElementById("s_match");
-const wrongSound = document.getElementById("s_wrong");
-const winSound = document.getElementById("s_win");
+// ===== AUDIO MODULE =====
+const AudioModule = (() => {
+  const sounds = {
+    flip: document.getElementById("s_flip"),
+    match: document.getElementById("s_match"),
+    wrong: document.getElementById("s_wrong"),
+    win: document.getElementById("s_win")
+  };
+  let isMuted = false;
 
-// SCREEN ELEMENTS
-const startBtn = document.getElementById("startBtn");
-const startScreen = document.getElementById("startScreen");
-const levelScreen = document.getElementById("levelScreen");
-const gameScreen = document.getElementById("gameScreen");
+  return {
+    play: (name) => {
+      if (isMuted) return;
+      const s = sounds[name];
+      if (s && typeof s.play === 'function') {
+        try { s.currentTime = 0; s.play(); } catch (e) { /* ignore play errors */ }
+      }
+    },
+    toggleMute: () => { isMuted = !isMuted; return isMuted; },
+    isMuted: () => isMuted
+  };
+})();
 
-const board = document.getElementById("board");
-const scoreEl = document.getElementById("score");
-const timeEl = document.getElementById("time");
-const matchesEl = document.getElementById("matches");
+// ===== STORAGE MODULE =====
+const StorageModule = (() => {
+  const KEY = 'memoryGameHighScore';
+  return {
+    getHighScore: () => parseInt(localStorage.getItem(KEY) || '0', 10),
+    setHighScore: (v) => { localStorage.setItem(KEY, String(v)); }
+  };
+})();
 
-const restartBtn = document.getElementById("restartBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const backBtn = document.getElementById("backBtn");
-const message = document.getElementById("message");
+// ===== UI MODULE =====
+const UIModule = (() => {
+  const elements = {
+    startScreen: document.getElementById('startScreen'),
+    levelScreen: document.getElementById('levelScreen'),
+    gameScreen: document.getElementById('gameScreen'),
+    startBtn: document.getElementById('startBtn'),
+    board: document.getElementById('board'),
+    score: document.getElementById('score'),
+    time: document.getElementById('time'),
+    matches: document.getElementById('matches'),
+    levelDisplay: document.getElementById('levelDisplay'),
+    message: document.getElementById('message'),
+    highScore: document.getElementById('highScore'),
+    soundToggle: document.getElementById('soundToggle'),
+    soundToggleStart: document.getElementById('soundToggleStart'),
+    pauseBtn: document.getElementById('pauseBtn'),
+    restartBtn: document.getElementById('restartBtn'),
+    backBtn: document.getElementById('backBtn')
+  };
 
+  return {
+    showScreen: (name) => {
+      ['startScreen','levelScreen','gameScreen'].forEach(k => elements[k].classList.add('hidden'));
+      if (name === 'start') elements.startScreen.classList.remove('hidden');
+      if (name === 'level') elements.levelScreen.classList.remove('hidden');
+      if (name === 'game') elements.gameScreen.classList.remove('hidden');
+    },
+    clearBoard: () => { elements.board.innerHTML = ''; },
+    appendCard: (card) => elements.board.appendChild(card),
+    setGridCols: (cols) => { elements.board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`; },
+    setBoardClass: (lvl) => { elements.board.classList.remove('easy','medium','hard'); elements.board.classList.add(lvl); },
+    updateStats: (score, time, matches) => { if (elements.score) elements.score.textContent = score; if (elements.time) elements.time.textContent = time; if (elements.matches) elements.matches.textContent = matches; },
+    setLevelDisplay: (lvl) => { if (elements.levelDisplay) elements.levelDisplay.textContent = lvl.charAt(0).toUpperCase()+lvl.slice(1); },
+    setMessage: (text) => { if (elements.message) { elements.message.textContent = text; elements.message.classList.remove('hidden'); } },
+    hideMessage: () => { if (elements.message) elements.message.classList.add('hidden'); },
+    updateHighScore: () => { if (elements.highScore) elements.highScore.textContent = StorageModule.getHighScore(); },
+    get: () => elements
+  };
+})();
 
-// VARIABLES
-let score = 0;
-let timer = 0;
-let remainingTime = 0;
-let interval = null; 
-// THIS IS STORE THE SETINTERVAL ID AND SAVE DUPLICATE TIME
-let matchedCount = 0;
-let selected = [];
-// STORE THE CURRENTLY FLIP CARD AND MAX 2 CARD STORE
-let currentLevel = null;
-// USER WHICH LEVEL PLAY
+// ===== GAME STATE =====
+const GameState = (() => {
+  let state = {
+    level: null,
+    totalCards: 0,
+    remainingTime: 0,
+    score: 0,
+    matched: 0,
+    selected: [],
+    isPaused: false,
+    timerId: null
+  };
 
-let isPaused = false;     
-// STORE THE ON OFF BOTTON   
-let isInputLocked = false; 
-// IF WRONG CARD FLIP THEN LOCK THE INPUT
-
-// LEVEL CARD COUNTS
-const levelConfig = {
-    easy: 16,
-    medium: 36,
-    hard: 64
-};
-// LEVEL TIMER
-const timerConfig = {
-    easy: 60,
-    medium: 120,
-    hard: 150
-};
-
-// START
-startBtn.onclick = () => {
-    startScreen.classList.add("hidden");
-    // IN CSS HIDEEN -> DISPLAY NONE
-    levelScreen.classList.remove("hidden");
-    // SHOW THE LEVEL SCREEN
-    // REMOVE THE HIDDEN CLASS
-};
-
-// SELECT LEVEL
-document.querySelectorAll(".level").forEach(btn => {
-    btn.onclick = () => startGame(btn.dataset.level);
-    // SELECT ALL LEVEL USE FOR EACH LOOP AND ALL BOOTON ADD EVENT
-});
-
-// START GAME FUNCTION
-function startGame(level) {
-    currentLevel = level;
-    // USER CHOSE LEVEL
-    remainingTime = timerConfig[level];
-    // TIMER SET = LEVEL
-
-
-    resetGame();
-
-    levelScreen.classList.add("hidden");
-    // LEVEL SCREEN HIDE 
-    gameScreen.classList.remove("hidden");
-    // GAME SCREEN SHOW
-
-    createBoard(levelConfig[level]);
-    // CREATE THE BOARD GRID
-    startTimer();
-    // START TIMER
-}
-
-// RESET GAME
-
-function resetGame() {
-    score = 0;
-    matchedCount = 0;
-    selected = [];
-    // TWO FLIP CARD OF ARRAY EMPTY
-    isPaused = false;
-    isInputLocked = false;
-    // MISMATCH LOCK /TIME OVER/WIN LOCK
-
-    clearInterval(interval);
-    // OLDER TIME DEL
-
-    timer = remainingTime;
-    // SHOW TIMER
-    scoreEl.textContent = score;
-    // UPDATE UI SCORE
-    timeEl.textContent = timer;
-    // UPDATE UI TIME
-    matchesEl.textContent = matchedCount;
-    // SHOW HOW MANY CARDS HAVE BEEN SUCCESFULLY MATCHED SO FAR
-
-    board.innerHTML = "";
-    // CLEAN OLDER CARD
-    message.classList.add("hidden");
-    // LEVEL COMP ->TIME OVER MSG HIDE
-
-    pauseBtn.textContent = "Pause";
-    // RESET THE PAUSE BOTTON
-}
-// CREATE BOARDS
-function createBoard(total) {
-    board.classList.remove("easy", "medium", "hard");
-    // REMOVE THE BEFORE CLASS LEVEL
-    board.classList.add(currentLevel);
-    // ADD NEW LEVEL
-
-    let arr = [];
-    // STORE THE CARD VALUE
-
-    for (let i = 1; i <= total / 2; i++) {
-        arr.push(i, i);
+  return {
+    get: (k) => state[k],
+    set: (k,v) => { state[k]=v; },
+    resetForLevel: (level, cards, time) => {
+      state.level = level; state.totalCards = cards; state.remainingTime = time; state.score = 0; state.matched = 0; state.selected = []; state.isPaused = false; if (state.timerId) clearInterval(state.timerId); state.timerId = null;
     }
-    // USING LOOP DIV BY 2 BEACAUSE MATCH PAIR CARD
+  };
+})();
 
-    arr = shuffle(arr);
-    // PAIR THE RANDOM POSITION FIX
+// ===== CONFIG =====
+const CONFIG = {
+  easy: {cards:16, time:60},
+  medium: {cards:36, time:120},
+  hard: {cards:64, time:150}
+};
 
-// SET THE NO OF THE COLUMNS
-    let cols = Math.sqrt(total);
-    board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+// ===== GAME ENGINE =====
+const GameEngine = (() => {
+  const shuffle = (a) => { for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
 
-    arr.forEach(value => {
-        const card = document.createElement("div");
-        card.className = "card";
-        // CREATE NEW DIV CARD
-        card.dataset.value = value;
-        // SET THE MATCHING CARD VALUE
+  const createBoard = (level) => {
+    const cfg = CONFIG[level];
+    GameState.resetForLevel(level, cfg.cards, cfg.time);
+    UIModule.clearBoard();
+    UIModule.setGridCols(Math.sqrt(cfg.cards));
+    UIModule.setBoardClass(level);
 
-        card.innerHTML = `
-            <div class="inner">
-                <div class="front">?</div>
-                <div class="back">${value}</div>
-            </div>
-            
-        `;
-        // CREATE THE CARD FRONT AND BAC
-        // THIS STRUCTURE BASE ON CSS FLIP ANIMATION
+    // build pairs
+    const arr = [];
+    for (let i=1;i<=cfg.cards/2;i++){ arr.push(i); arr.push(i); }
+    shuffle(arr);
 
-        card.onclick = () => {
-            if (!isInputLocked) flipCard(card);
-        };
-        // IF CARD FLIP BUT INPUT LOCKED HONE PR CARD NOT FLIP
-
-        board.appendChild(card);
-        // ADD TWO CARD IN BOARD
-        // ALL CARD ARRANGE IN GRID
+    arr.forEach(v => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.value = v;
+      card.innerHTML = `<div class="inner"><div class="front">🎮</div><div class="back">${v}</div></div>`;
+      card.addEventListener('click', () => onCardClick(card));
+      UIModule.appendCard(card);
     });
-    
-    
-}
 
-// fFLIP CARD
-function flipCard(card) {
-    if (isPaused) return;  
-    // IF GAME PAUSE CARD NOT FLIP
-    if (isInputLocked) return; 
-    // IF WRONG MATCHH THEN 600MS LETTER THEN FLIP BLOCK
-    if (card.classList.contains("flipped")) return;
-    // STOP TWO TIME FLIP CARD
+    // init UI stats and progress
+    UIModule.updateStats(0, cfg.time, 0);
+    ProgressModule.start(cfg.time);
+  };
+
+  const onCardClick = (card) => {
+    if (GameState.get('isPaused')) return;
+    const selected = GameState.get('selected');
+    if (!card || card.classList.contains('flipped')) return;
     if (selected.length === 2) return;
-    // ONE TIME TWO CARD FLIP
 
-    flipSound.play();
-    // START SOUND
-    card.classList.add("flipped");
-    // CSS 3D ROTATE
+    AudioModule.play('flip');
+    card.classList.add('flipped');
     selected.push(card);
-    // AFTER FLIP THE ADD EMPTY ARRAY
+    GameState.set('selected', selected);
 
-    if (selected.length === 2) checkMatch();
-    // IF TWO CARD FLIP THE CHECK MATCH RUN
-}
+    if (selected.length === 2) {
+      checkMatch();
+    }
+  };
 
-// CHECK MATCH
-function checkMatch() {
-    const [c1, c2] = selected;
-
-    isInputLocked = true;
-    // FIRST CARD MATCH THEN NEXT CARD FLIP
-
-    // MATCH CASES-
-
+  const checkMatch = () => {
+    const [c1,c2] = GameState.get('selected');
+    GameState.set('isPaused', true);
     if (c1.dataset.value === c2.dataset.value) {
-        matchSound.play();
+      AudioModule.play('match');
+      // mark matched
+      c1.classList.add('matched'); c2.classList.add('matched');
+      GameState.set('score', GameState.get('score') + 10);
+      GameState.set('matched', GameState.get('matched') + 2);
+      GameState.set('selected', []);
+      GameState.set('isPaused', false);
+      UIModule.updateStats(GameState.get('score'), GameState.get('remainingTime'), GameState.get('matched'));
 
-        score += 10;
-        matchedCount += 2;
-// UI UPDATE
-        scoreEl.textContent = score;
-        matchesEl.textContent = matchedCount;
-// EMPTY ARRAY THEN CARD FLIP
-        selected = [];
-        isInputLocked = false;
-        // WIN CONDITION
-
-        if (matchedCount === levelConfig[currentLevel]) {
-            winSound.play();
-            clearInterval(interval);
-            isInputLocked = true;
-            message.textContent = "🎉 Level Complete!";
-            message.classList.remove("hidden");
-        }
-
+      if (GameState.get('matched') === GameState.get('totalCards')) {
+        // level complete
+        clearTimer();
+        AudioModule.play('win');
+        StorageModule.setHighScore(Math.max(StorageModule.getHighScore(), GameState.get('score')));
+        UIModule.updateHighScore();
+        ModalModule.showCongrats(GameState.get('score'), `Level complete! Score: ${GameState.get('score')}`);
+      }
     } else {
-        // WRONG CASE(MISMATCH)
-        wrongSound.play();
-        setTimeout(() => {
-            c1.classList.remove("flipped");
-            c2.classList.remove("flipped");
-            selected = [];
-            isInputLocked = false;
-        }, 600);
-        // 600 MS AFTER CARD FLIP
+      AudioModule.play('wrong');
+      setTimeout(() => {
+        c1.classList.remove('flipped'); c2.classList.remove('flipped');
+        GameState.set('selected', []);
+        GameState.set('isPaused', false);
+      }, 600);
     }
-}
+  };
 
-// TIMER
-function startTimer() {
-    clearInterval(interval);
-    // OLDER TIME BAND
+  const startTimer = () => {
+    clearTimer();
+    const tick = () => {
+      if (GameState.get('isPaused')) return;
+      const rem = GameState.get('remainingTime') - 1;
+      GameState.set('remainingTime', rem);
+      UIModule.updateStats(GameState.get('score'), rem, GameState.get('matched'));
+      ProgressModule.update(rem);
+      if (rem <= 0) {
+        clearTimer();
+        GameState.set('isPaused', true);
+        ModalModule.showCongrats(GameState.get('score'), `Time over! Score: ${GameState.get('score')}`);
+      }
+    };
+    const id = setInterval(tick, 1000);
+    GameState.set('timerId', id);
+  };
 
-    interval = setInterval(() => {
-        if (isPaused) return;
-        // FUN RUN IN EACH SECOND
-        // AFTER PAUSE THEN TIMER STOP
+  const clearTimer = () => { const id = GameState.get('timerId'); if (id) clearInterval(id); GameState.set('timerId', null); };
 
-        remainingTime--;
-        // TIME = TIME-1
-        timeEl.textContent = remainingTime;
-        // UPDATE SCREEN TIME
+  const pause = () => { GameState.set('isPaused', !GameState.get('isPaused')); };
 
+  return { createBoard, startTimer, pause, clearTimer };
+})();
 
-// TIME OVER CASE
-        if (remainingTime <= 0) {
-            clearInterval(interval);
-            isInputLocked = true;
-            message.textContent = "⏳ Time Over!";
-            message.classList.remove("hidden");
-        }
-    }, 1000);
-}
+// ===== ADDITIONAL MODULES =====
+// Progress module
+const ProgressModule = (() => {
+  const el = document.getElementById('timeProgress');
+  let total = 0;
+  return {
+    start: (secs) => { total = secs; if (el) el.style.width = '100%'; },
+    update: (remaining) => { if (!el || !total) return; const pct = Math.max(0, Math.min(100, Math.round((remaining/total)*100))); el.style.width = pct + '%'; }
+  };
+})();
 
-// SHUFFLE
-function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-//    Shuffle = swapping array elements from the end to the beginning with random positions so the entire deck gets perfectly mixed.
-}
-// BUTTONS
-// PAUSE BTN
-pauseBtn.onclick = () => {
-    isPaused = !isPaused;
-    pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+// Modal module
+const ModalModule = (() => {
+  const congrats = document.getElementById('congratsModal');
+  const congratsMessage = document.getElementById('congratsMessage');
+  const settings = document.getElementById('settingsModal');
 
-    if (!isPaused) startTimer();
-};
-// RESTART BTN
-restartBtn.onclick = () => {
-    remainingTime = timerConfig[currentLevel];
-    startGame(currentLevel);
-};
-// BACK BTN
-backBtn.onclick = () => {
-    clearInterval(interval);
-    gameScreen.classList.add("hidden");
-    levelScreen.classList.remove("hidden");
-    message.classList.add("hidden");
-};
+  return {
+    showCongrats: (score, msg) => { if (congratsMessage) congratsMessage.textContent = msg || `Score: ${score}`; if (congrats) congrats.classList.remove('hidden'); },
+    hideCongrats: () => { if (congrats) congrats.classList.add('hidden'); },
+    showSettings: () => { if (settings) settings.classList.remove('hidden'); },
+    hideSettings: () => { if (settings) settings.classList.add('hidden'); }
+  };
+})();
+
+// Settings module
+const SettingsModule = (() => {
+  const cardBackSelect = document.getElementById('cardBackSelect');
+  const soundBtn = document.getElementById('settingsSound');
+  const themeBtn = document.getElementById('settingsTheme');
+
+  const init = () => {
+    if (cardBackSelect) cardBackSelect.onchange = () => { document.querySelectorAll('.front').forEach(f => f.textContent = cardBackSelect.value); };
+    if (soundBtn) soundBtn.onclick = () => { AudioModule.toggleMute(); soundBtn.textContent = AudioModule.isMuted() ? '🔇' : '🔊'; document.querySelectorAll('#soundToggle, #soundToggleStart').forEach(b=>{ if(b) b.textContent = AudioModule.isMuted() ? '🔇' : '🔊'; }); };
+    if (themeBtn) themeBtn.onclick = () => { document.body.classList.toggle('alt-theme'); themeBtn.textContent = document.body.classList.contains('alt-theme') ? '☀️' : '🌙'; };
+    const close = document.getElementById('settingsClose'); if (close) close.onclick = () => ModalModule.hideSettings();
+  };
+  return { init };
+})();
+
+// Notification (toast)
+const NotificationModule = (() => {
+  const show = (text, time = 2000) => {
+    const t = document.createElement('div'); t.className = 'toast-msg'; t.textContent = text; document.body.appendChild(t);
+    setTimeout(()=> t.classList.add('show'), 10);
+    setTimeout(()=> { t.classList.remove('show'); setTimeout(()=> t.remove(),300); }, time);
+  };
+  return { show };
+})();
+
+// ===== BOOT / EVENTS =====
+document.addEventListener('DOMContentLoaded', () => {
+  // wire buttons
+  document.querySelectorAll('.level').forEach(b => b.addEventListener('click', (e)=>{ const lvl = b.dataset.level; GameEngine.createBoard(lvl); GameEngine.startTimer(); UIModule.showScreen('game'); UIModule.setLevelDisplay(lvl); }));
+  const start = document.getElementById('startBtn'); if (start) start.addEventListener('click', ()=> UIModule.showScreen('level'));
+  const pause = document.getElementById('pauseBtn'); if (pause) pause.addEventListener('click', ()=> { GameEngine.pause(); pause.textContent = GameState.get('isPaused') ? '⏯ Resume' : '⏸ Pause'; });
+  const restart = document.getElementById('restartBtn'); if (restart) restart.addEventListener('click', ()=> { const lvl = GameState.get('level') || 'easy'; GameEngine.createBoard(lvl); GameEngine.startTimer(); });
+  const back = document.getElementById('backBtn'); if (back) back.addEventListener('click', ()=> { GameEngine.clearTimer(); UIModule.showScreen('level'); });
+
+  // sound toggles
+  document.querySelectorAll('#soundToggle,#soundToggleStart').forEach(btn => { if (btn) btn.addEventListener('click', ()=> { AudioModule.toggleMute(); btn.textContent = AudioModule.isMuted() ? '🔇' : '🔊'; }); });
+
+  // modal buttons
+  const modalRestart = document.getElementById('modalRestart'); if (modalRestart) modalRestart.addEventListener('click', ()=>{ ModalModule.hideCongrats(); const lvl = GameState.get('level') || 'easy'; GameEngine.createBoard(lvl); GameEngine.startTimer(); });
+  const modalBack = document.getElementById('modalBack'); if (modalBack) modalBack.addEventListener('click', ()=>{ ModalModule.hideCongrats(); UIModule.showScreen('level'); });
+
+  // level display opens settings
+  const lvlDisp = document.getElementById('levelDisplay'); if (lvlDisp) lvlDisp.addEventListener('click', ()=> ModalModule.showSettings());
+
+  SettingsModule.init();
+  UIModule.updateHighScore();
+  UIModule.showScreen('start');
+});
 
 
