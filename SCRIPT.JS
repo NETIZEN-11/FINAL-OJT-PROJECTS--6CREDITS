@@ -263,6 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const restart = document.getElementById('restartBtn'); if (restart) restart.addEventListener('click', ()=> { const lvl = GameState.get('level') || 'easy'; GameEngine.createBoard(lvl); GameEngine.startTimer(); });
   const back = document.getElementById('backBtn'); if (back) back.addEventListener('click', ()=> { GameEngine.clearTimer(); UIModule.showScreen('level'); });
 
+  const backFromLevel = document.getElementById('backFromLevel'); if (backFromLevel) backFromLevel.addEventListener('click', ()=> { UIModule.showScreen('start'); });
+
   // sound toggles
   document.querySelectorAll('#soundToggle,#soundToggleStart').forEach(btn => { if (btn) btn.addEventListener('click', ()=> { AudioModule.toggleMute(); btn.textContent = AudioModule.isMuted() ? '🔇' : '🔊'; }); });
 
