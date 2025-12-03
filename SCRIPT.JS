@@ -50,8 +50,8 @@ const levelConfig = {
 // LEVEL TIMER
 const timerConfig = {
     easy: 60,
-    medium: 90,
-    hard: 120
+    medium: 120,
+    hard: 150
 };
 
 // START
