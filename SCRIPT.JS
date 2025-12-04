@@ -1,5 +1,5 @@
+// THIS IS JS OF POWER FULL MODE - CLEAN CODE ,DIBUG FREE,REMOVE LET CONST VAR ERROR
 "use strict";
-// THIS IS JS OF POWER FULL MODE - CLEAN CODE ,DIBUG FREE,REMOVE LET CONST VAT ERROR
 
 // SOUND
 const flipSound = document.getElementById("s_flip");
@@ -28,18 +28,18 @@ const message = document.getElementById("message");
 let score = 0;
 let timer = 0;
 let remainingTime = 0;
-let interval = null; 
 // THIS IS STORE THE SETINTERVAL ID AND SAVE DUPLICATE TIME
+let interval = null; 
 let matchedCount = 0;
-let selected = [];
 // STORE THE CURRENTLY FLIP CARD AND MAX 2 CARD STORE
-let currentLevel = null;
+let selected = [];
 // USER WHICH LEVEL PLAY
+let currentLevel = null;
 
-let isPaused = false;     
 // STORE THE ON OFF BOTTON   
-let isInputLocked = false; 
+let isPaused = false;     
 // IF WRONG CARD FLIP THEN LOCK THE INPUT
+let isInputLocked = false; 
 
 // LEVEL CARD COUNTS
 const levelConfig = {
@@ -56,88 +56,88 @@ const timerConfig = {
 
 // START
 startBtn.onclick = () => {
-    startScreen.classList.add("hidden");
     // IN CSS HIDEEN -> DISPLAY NONE
-    levelScreen.classList.remove("hidden");
-    // SHOW THE LEVEL SCREEN
+    startScreen.classList.add("hidden");
     // REMOVE THE HIDDEN CLASS
+    // SHOW THE LEVEL SCREEN
+    levelScreen.classList.remove("hidden");
 };
 
 // SELECT LEVEL
+// SELECT ALL LEVEL USE FOR EACH LOOP AND ALL BOOTON ADD EVENT
 document.querySelectorAll(".level").forEach(btn => {
     btn.onclick = () => startGame(btn.dataset.level);
-    // SELECT ALL LEVEL USE FOR EACH LOOP AND ALL BOOTON ADD EVENT
 });
 
 // START GAME FUNCTION
 function startGame(level) {
-    currentLevel = level;
     // USER CHOSE LEVEL
+    currentLevel = level;
+
     remainingTime = timerConfig[level];
     // TIMER SET = LEVEL
 
-
     resetGame();
 
-    levelScreen.classList.add("hidden");
     // LEVEL SCREEN HIDE 
-    gameScreen.classList.remove("hidden");
+    levelScreen.classList.add("hidden");
     // GAME SCREEN SHOW
+    gameScreen.classList.remove("hidden");
 
-    createBoard(levelConfig[level]);
     // CREATE THE BOARD GRID
-    startTimer();
+    createBoard(levelConfig[level]);
     // START TIMER
+    startTimer();
 }
 
-// RESET GAME
 
+// RESET GAME
 function resetGame() {
     score = 0;
     matchedCount = 0;
-    selected = [];
     // TWO FLIP CARD OF ARRAY EMPTY
+    selected = [];
     isPaused = false;
-    isInputLocked = false;
     // MISMATCH LOCK /TIME OVER/WIN LOCK
+    isInputLocked = false;
 
-    clearInterval(interval);
     // OLDER TIME DEL
+    clearInterval(interval);
 
-    timer = remainingTime;
     // SHOW TIMER
-    scoreEl.textContent = score;
+    timer = remainingTime;
     // UPDATE UI SCORE
-    timeEl.textContent = timer;
+    scoreEl.textContent = score;
     // UPDATE UI TIME
-    matchesEl.textContent = matchedCount;
+    timeEl.textContent = timer;
     // SHOW HOW MANY CARDS HAVE BEEN SUCCESFULLY MATCHED SO FAR
+    matchesEl.textContent = matchedCount;
 
-    board.innerHTML = "";
     // CLEAN OLDER CARD
-    message.classList.add("hidden");
+    board.innerHTML = "";
     // LEVEL COMP ->TIME OVER MSG HIDE
+    message.classList.add("hidden");
 
-    pauseBtn.textContent = "Pause";
     // RESET THE PAUSE BOTTON
+    pauseBtn.textContent = "Pause";
 }
 // CREATE BOARDS
 function createBoard(total) {
-    board.classList.remove("easy", "medium", "hard");
     // REMOVE THE BEFORE CLASS LEVEL
-    board.classList.add(currentLevel);
+    board.classList.remove("easy", "medium", "hard");
     // ADD NEW LEVEL
+    board.classList.add(currentLevel);
 
-    let arr = [];
     // STORE THE CARD VALUE
+    let arr = [];
 
+    // USING LOOP DIV BY 2 BEACAUSE MATCH PAIR CARD
     for (let i = 1; i <= total / 2; i++) {
         arr.push(i, i);
     }
-    // USING LOOP DIV BY 2 BEACAUSE MATCH PAIR CARD
 
-    arr = shuffle(arr);
     // PAIR THE RANDOM POSITION FIX
+    arr = shuffle(arr);
 
 // SET THE NO OF THE COLUMNS
     let cols = Math.sqrt(total);
@@ -145,11 +145,13 @@ function createBoard(total) {
 
     arr.forEach(value => {
         const card = document.createElement("div");
-        card.className = "card";
         // CREATE NEW DIV CARD
-        card.dataset.value = value;
+        card.className = "card";
         // SET THE MATCHING CARD VALUE
+        card.dataset.value = value;
 
+        // THIS STRUCTURE BASE ON CSS FLIP ANIMATION
+        // CREATE THE CARD FRONT AND BAC
         card.innerHTML = `
             <div class="inner">
                 <div class="front">?</div>
@@ -157,17 +159,15 @@ function createBoard(total) {
             </div>
             
         `;
-        // CREATE THE CARD FRONT AND BAC
-        // THIS STRUCTURE BASE ON CSS FLIP ANIMATION
 
+        // IF CARD FLIP BUT INPUT LOCKED HONE PR CARD NOT FLIP
         card.onclick = () => {
             if (!isInputLocked) flipCard(card);
         };
-        // IF CARD FLIP BUT INPUT LOCKED HONE PR CARD NOT FLIP
 
-        board.appendChild(card);
-        // ADD TWO CARD IN BOARD
         // ALL CARD ARRANGE IN GRID
+        // ADD TWO CARD IN BOARD
+        board.appendChild(card);
     });
     
     
@@ -175,35 +175,35 @@ function createBoard(total) {
 
 // fFLIP CARD
 function flipCard(card) {
-    if (isPaused) return;  
     // IF GAME PAUSE CARD NOT FLIP
-    if (isInputLocked) return; 
+    if (isPaused) return;  
     // IF WRONG MATCHH THEN 600MS LETTER THEN FLIP BLOCK
-    if (card.classList.contains("flipped")) return;
+    if (isInputLocked) return; 
     // STOP TWO TIME FLIP CARD
-    if (selected.length === 2) return;
+    if (card.classList.contains("flipped")) return;
     // ONE TIME TWO CARD FLIP
+    if (selected.length === 2) return;
 
-    flipSound.play();
     // START SOUND
-    card.classList.add("flipped");
+    flipSound.play();
     // CSS 3D ROTATE
-    selected.push(card);
+    card.classList.add("flipped");
     // AFTER FLIP THE ADD EMPTY ARRAY
+    selected.push(card);
 
-    if (selected.length === 2) checkMatch();
     // IF TWO CARD FLIP THE CHECK MATCH RUN
+    if (selected.length === 2) checkMatch();
 }
 
 // CHECK MATCH
 function checkMatch() {
     const [c1, c2] = selected;
 
-    isInputLocked = true;
     // FIRST CARD MATCH THEN NEXT CARD FLIP
+    isInputLocked = true;
 
+    
     // MATCH CASES-
-
     if (c1.dataset.value === c2.dataset.value) {
         matchSound.play();
 
@@ -215,8 +215,9 @@ function checkMatch() {
 // EMPTY ARRAY THEN CARD FLIP
         selected = [];
         isInputLocked = false;
-        // WIN CONDITION
 
+        
+        // WIN CONDITION
         if (matchedCount === levelConfig[currentLevel]) {
             winSound.play();
             clearInterval(interval);
@@ -233,25 +234,25 @@ function checkMatch() {
             c2.classList.remove("flipped");
             selected = [];
             isInputLocked = false;
+            // 600 MS AFTER CARD FLIP
         }, 600);
-        // 600 MS AFTER CARD FLIP
     }
 }
 
 // TIMER
+// OLDER TIME BAND
 function startTimer() {
     clearInterval(interval);
-    // OLDER TIME BAND
 
+    // FUN RUN IN EACH SECOND
+    // AFTER PAUSE THEN TIMER STOP
     interval = setInterval(() => {
         if (isPaused) return;
-        // FUN RUN IN EACH SECOND
-        // AFTER PAUSE THEN TIMER STOP
 
-        remainingTime--;
         // TIME = TIME-1
-        timeEl.textContent = remainingTime;
+        remainingTime--;
         // UPDATE SCREEN TIME
+        timeEl.textContent = remainingTime;
 
 
 // TIME OVER CASE
@@ -262,16 +263,16 @@ function startTimer() {
             message.classList.remove("hidden");
         }
     }, 1000);
-}
 
+}
 // SHUFFLE
+//    Shuffle = swapping array elements from the end to the beginning with random positions so the entire deck gets perfectly mixed.
 function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-//    Shuffle = swapping array elements from the end to the beginning with random positions so the entire deck gets perfectly mixed.
 }
 // BUTTONS
 // PAUSE BTN
